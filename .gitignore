@@ -5,3 +5,5 @@
 *.idb
 *.pdb
 *.filters
+*.obj
+*.obj

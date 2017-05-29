@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "lexer.h"
-//#include "AST_TREE.h"
+#include "AST_TREE.h"
 #define CHUNK_SIZE 1000
 #define SPACES 4
 
@@ -41,7 +41,6 @@ int insert_lexeme(lexeme_list** head, lexeme_list** tail, lexeme_type type, char
 	*tail = p;
 	return 1;
 }
-
 
 int read_file(char* file_name, char** content, int* file_length)
 {
@@ -186,4 +185,179 @@ void print_tree(FILE* f, ast* root, int count)
 		print_tree(f, root->right, count + SPACES);
 		fprintf(f, "%*c</node>\n", count, ' ');
 	}
+}
+
+int parse_sum(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+	int result = 0;
+
+	if (!cr_node(node, A_SUM, NULL)) {
+		*syntax_error = 0;
+		return 0;
+	}
+
+	if (!((*a)->type == NUMBER)) {
+		*syntax_error = 1;
+		return 0;
+	}
+
+	if ((*a)->type == NUMBER) {
+		result = cr_node((&((*node)->left)), A_NUMBER, (*a)->value);
+	}
+
+	else {
+		*syntax_error = 0;
+		return 0;
+	}
+	if (!result) {
+		*syntax_error = 0;
+		return 0;
+	}
+
+	*a = (*a)->next;
+
+	if (*a == NULL) {
+		result = parse_other_empty(a, &((*node)->right), syntax_error, count);
+	}
+	else if (((*a)->type == RIGHT_PAR) && ((*count) > 0)) {
+		result = parse_other_empty(a, &((*node)->right), syntax_error, count);
+	}
+	else if (((*a)->type == RIGHT_PAR) && ((*count) <= 0)) {
+		*syntax_error = 1;
+		return 0;
+	}
+	else if ((*a)->type == OPERATION) {
+		result = parse_other_operation(a, &((*node)->right), syntax_error, count);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+	return result;
+}
+
+int parse_sum_p(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+	int result;
+	if (!cr_node(node, A_SUM, NULL)) {
+		*syntax_error = 0;
+		return 0;
+	}
+	if ((!((*a)->type == LEFT_PAR)) || ((*count) < 0)) {
+		*syntax_error = 1;
+		return 0;
+	}
+	if ((*a)->type == LEFT_PAR) {
+		(*count)++;
+		result = cr_node((&((*node)->p1)), A_LEFR_PAR, (*a)->value);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+
+	if (!result) {
+		*syntax_error = 0;
+		return 0;
+	}
+
+	*a = (*a)->next;
+
+	if (*a == NULL) {
+		*syntax_error = 1;
+		return 0;
+	}
+	if (((*a)->type == NUMBER) || ((*a)->type == LEFT_PAR)) {
+		result = sum_choice(a, &((*node)->left), syntax_error, count);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+
+	if (!result) {
+		return 0;
+	}
+
+	if ((*a)->type == RIGHT_PAR) {
+		(*count)--;
+		result = cr_node((&((*node)->p2)), A_RIGHT_PAR, (*a)->value);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+
+	if (!result) {
+		*syntax_error = 0;
+		return 0;
+	}
+
+	*a = (*a)->next;
+
+	if (*a == NULL) {
+		result = parse_other_empty(a, &((*node)->right), syntax_error, count);
+	}
+	else if (((*a)->type == RIGHT_PAR) && ((*count) > 0)) {
+		result = parse_other_empty(a, &((*node)->right), syntax_error, count);
+	}
+	else if (((*a)->type == RIGHT_PAR) && ((*count) <= 0)) {
+		*syntax_error = 1;
+		return 0;
+	}
+	else if ((*a)->type == OPERATION) {
+		result = parse_other_operation(a, &((*node)->right), syntax_error, count);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+
+	return result;
+}
+
+int sum_choice(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+	if ((*a)->type == NUMBER)
+		return parse_sum(a, node, syntax_error, count);
+	if ((*a)->type == LEFT_PAR)
+		return parse_sum_p(a, node, syntax_error, count);
+	else
+		return 0;
+}
+
+int parse_other_operation(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+	int result;
+	if (!cr_node(node, A_OTHER, NULL)) {
+		*syntax_error = 0;
+		return 0;
+	}
+	if (!((*a)->type == OPERATION)) {
+		*syntax_error = 1;
+		return 0;
+	}
+	if ((*a)->type == OPERATION) {
+		result = cr_node((&((*node)->left)), A_OPERATION, (*a)->value);
+	}
+	else {
+		*syntax_error = 0;
+		return 0;
+	}
+	if (!result) {
+		*syntax_error = 0;
+		return 0;
+	}
+	*a = (*a)->next;
+	if (*a == NULL) {
+		result = parse_other_empty(a, &((*node)->left), syntax_error, count);
+	}
+	if ((*a)->type == NUMBER || (*a)->type == LEFT_PAR) {
+		result = sum_choice(a, &((*node)->right), syntax_error, count);
+	}
+	else {
+		*syntax_error = 1;
+		return 0;
+	}
+	return result;
+}
+
+int parse_other_empty(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+	return 1;
 }

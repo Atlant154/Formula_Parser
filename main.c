@@ -27,7 +27,7 @@ void destroy_list(lexeme_list* head, lexeme_list* tail)
 The recursive function of removing the AST tree.
 We pass along the branch and clear the memory.
 */
-void free_ast_tree(AST_tree* root)
+void free_ast_tree(ast* root)
 {
 	if (NULL != root)
 	{
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 	int i;
 	int count;
 	int sinerror;
-	AST_tree* root = NULL;
+	ast* root = NULL;
 	lexeme_list* head;
 	lexeme_list* tail;
 	lexeme_list* copy_head;
