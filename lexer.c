@@ -358,6 +358,7 @@ int parse_other_operation(lexeme_list** a, ast** node, int* syntax_error, int* c
 	return result;
 }
 
-int parse_other_empty(lexeme_list** a, ast** node, int* syntax_error, int* count) {
+int parse_other_empty(lexeme_list** a, ast** node, int* syntax_error, int* count) 
+{
 	return 1;
 }
